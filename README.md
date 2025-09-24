@@ -53,3 +53,11 @@ Em andamento para melhorar a arquitetura, modularidade e aplicar **Design Patter
 4. Navegue pelo menu interativo:
    - Digite o número da opção desejada e pressione Enter.
    - Os dados são carregados automaticamente a partir dos arquivos padrão.
+
+## 🧶 Design Patterns
+### Creational
+   Singleton
+      - Garante que a classe Biblioteca tenha apenas uma instância durante a execução.
+
+   Factory Method
+      - Utilizado para criar diferentes tipos de itens do acervo (livros, e-books, etc).
