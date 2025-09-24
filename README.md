@@ -55,9 +55,19 @@ Em andamento para melhorar a arquitetura, modularidade e aplicar **Design Patter
    - Os dados são carregados automaticamente a partir dos arquivos padrão.
 
 ## 🧶 Design Patterns
+
 ### Creational
+
    - Singleton
       - Garante que a classe Biblioteca tenha apenas uma instância durante a execução.
 
    - Factory Method
       - Utilizado para criar diferentes tipos de itens do acervo (livros, e-books, etc).
+    
+## 🏗️ Estrutura do Projeto
+
+### 📁 Estrutura modular e extensível, facilitando futuras adaptações:
+
+   - Persistência em banco de dados
+
+   - Interface web ou mobile
