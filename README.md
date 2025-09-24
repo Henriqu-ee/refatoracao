@@ -56,8 +56,8 @@ Em andamento para melhorar a arquitetura, modularidade e aplicar **Design Patter
 
 ## 🧶 Design Patterns
 ### Creational
-   Singleton
+   - Singleton
       - Garante que a classe Biblioteca tenha apenas uma instância durante a execução.
 
-   Factory Method
+   - Factory Method
       - Utilizado para criar diferentes tipos de itens do acervo (livros, e-books, etc).
