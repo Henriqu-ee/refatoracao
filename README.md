@@ -93,6 +93,6 @@ Desenvolvido para fins de aprendizado e demonstração de boas práticas em Pyth
 
 Recursos
 
--🐍 Python
--⚙️ Estrutura modular e extensível
--💾 Fácil adaptação para banco de dados ou interface web
+- 🐍 Python
+- ⚙️ Estrutura modular e extensível
+- 💾 Fácil adaptação para banco de dados ou interface web
