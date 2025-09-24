@@ -71,3 +71,12 @@ Em andamento para melhorar a arquitetura, modularidade e aplicar **Design Patter
    - Persistência em banco de dados
 
    - Interface web ou mobile
+
+## 💻 Como Usar
+
+- Execute:
+   ``` bash
+   python main.py
+   ```
+- Siga as instruções do menu para acessar todas as funcionalidades.
+- Cadastre membros, livros, realize empréstimos, reservas e gere relatórios.
