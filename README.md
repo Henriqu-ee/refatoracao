@@ -80,3 +80,19 @@ Em andamento para melhorar a arquitetura, modularidade e aplicar **Design Patter
    ```
 - Siga as instruções do menu para acessar todas as funcionalidades.
 - Cadastre membros, livros, realize empréstimos, reservas e gere relatórios.
+
+## 👥 Perfis de Usuário
+
+-Administrador: Acesso completo a todas as funcionalidades.
+-Membro: Consulta ao acervo, empréstimos, reservas e acesso a e-books.
+
+## 📌 Sobre
+
+### 📚 Projeto acadêmico sem fins comerciais.
+Desenvolvido para fins de aprendizado e demonstração de boas práticas em Python e orientação a objetos.
+
+Recursos
+
+-🐍 Python
+-⚙️ Estrutura modular e extensível
+-💾 Fácil adaptação para banco de dados ou interface web
