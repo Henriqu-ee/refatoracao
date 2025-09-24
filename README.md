@@ -43,13 +43,13 @@ Em andamento para melhorar a arquitetura, modularidade e aplicar **Design Patter
    cd seu-repositorio
    ``
 2. Instale as dependências (se houver):
-  ```bash
-  pip install -r requirements.txt
-  ```
+   ```bash
+   pip install -r requirements.txt
+   ```
 3. Execute o sistema:
    ``` bash
    python main.py
-  ``
+   ```
 4. Navegue pelo menu interativo:
    - Digite o número da opção desejada e pressione Enter.
    - Os dados são carregados automaticamente a partir dos arquivos padrão.
