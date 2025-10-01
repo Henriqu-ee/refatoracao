@@ -157,7 +157,17 @@ def menu_gerenciar_catalogo(biblioteca):
                 elif tipo == 'revista':
                     kwargs['edicao'] = input("Edição (opcional): ")
                 else:
-                    kwargs['link_download'] = input("Link para download: ")
+                    # Validação do link para ebook: não vazio e começa com http/https
+                    while True:
+                        link = input("Link para download: ").strip()
+                        if not link:
+                            print("❗️ O link não pode ficar vazio. Por favor insira um link válido.")
+                            continue
+                        if not (link.startswith('http://') or link.startswith('https://')):
+                            print("❗️ O link deve começar com http:// ou https://. Tente novamente.")
+                            continue
+                        break
+                    kwargs['link_download'] = link
                     kwargs['formato'] = input("Formato do ebook: ")
                 
                 #Chama o método de cadastro da biblioteca.
@@ -175,7 +185,7 @@ def menu_gerenciar_catalogo(biblioteca):
                 print("Nenhum item cadastrado.")
             else:
                 for item in itens:
-                    print(item.info_basica())
+                    print(item.descricao())
             input("\nPressione ENTER para continuar...")
             
         elif escolha == '5':
@@ -189,7 +199,7 @@ def menu_gerenciar_catalogo(biblioteca):
                 else:
                     print("\n--- Resultados da busca ---")
                     for item in resultados:
-                        print(item.info_basica())
+                        print(item.descricao())
             else:
                 print("Critério de busca inválido.")
             input("\nPressione ENTER para continuar...")
@@ -403,7 +413,7 @@ def menu_membro(biblioteca, membro):
                 else:
                     print("\n--- Resultados da busca ---")
                     for item in resultados:
-                        print(item.info_basica())
+                        print(item.descricao())
             else:
                 print("Critério de busca inválido.")
             input("\nPressione ENTER para continuar...")
