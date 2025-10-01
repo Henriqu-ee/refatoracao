@@ -65,12 +65,37 @@ class Item(ABC):
         #Método abstrato para uma informação básica e rápida do item.
         pass
 
+    # Compatibilidade: método `descricao()` usado pelo menu e pela fábrica refatorada.
+    def descricao(self) -> str:
+        return self.info_basica()
+
 
 #------------------ SUBCLASSES ------------------
 class Livro(Item):
     def __init__(self, titulo: str, autor: str, editora: str, genero: str, total_exemplares: int, isbn=None) -> None:
         super().__init__(titulo, autor, editora, genero, total_exemplares)
         self._isbn = isbn
+
+    # Expor atributos com nomes públicos para compatibilidade com o restante do código
+    @property
+    def titulo(self):
+        return self._titulo
+
+    @property
+    def autor(self):
+        return self._autor
+
+    @property
+    def genero(self):
+        return self._genero
+
+    @property
+    def exemplares_disponiveis(self):
+        return self._exemplares_disponiveis
+
+    @property
+    def total_exemplares(self):
+        return self._total_exemplares
 
     def __str__(self) -> str:
         base = (
@@ -104,6 +129,26 @@ class Revista(Item):
     def info_basica(self) -> str:
         return f"📰 {self.titulo} - {self.editora}"
 
+    @property
+    def titulo(self):
+        return self._titulo
+
+    @property
+    def autor(self):
+        return self._autor
+
+    @property
+    def genero(self):
+        return self._genero
+
+    @property
+    def exemplares_disponiveis(self):
+        return self._exemplares_disponiveis
+
+    @property
+    def total_exemplares(self):
+        return self._total_exemplares
+
 
 class Ebook(Item):
     def __init__(self, titulo: str, autor: str, editora: str, genero: str, total_exemplares: int, formato: str, link_download: str) -> None:
@@ -135,6 +180,30 @@ class Ebook(Item):
 
     def info_basica(self) -> str:
         return f"💻 {self.titulo} [{self._formato}]"
+
+    @property
+    def titulo(self):
+        return self._titulo
+
+    @property
+    def autor(self):
+        return self._autor
+
+    @property
+    def genero(self):
+        return self._genero
+
+    @property
+    def exemplares_disponiveis(self):
+        return self._exemplares_disponiveis
+
+    @property
+    def total_exemplares(self):
+        return self._total_exemplares
+
+    @property 
+    def link_download(self) -> str:
+        return self._link_download
 
 
 #------------------ OUTRAS CLASSES ------------------
