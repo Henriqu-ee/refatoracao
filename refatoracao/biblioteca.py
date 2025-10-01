@@ -1,49 +1,140 @@
+from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 import unicodedata
 from collections import Counter
 
 from classes import Evento, Multa, Ebook, Reserva, Membro, Emprestimo, Livro, Revista
+from builders import LivroBuilder, RevistaBuilder, EbookBuilder
 
 DIAS_EMPRESTIMO = 14
 MAXIMO_EMPRESTIMO_MEMBRO = 3
 
-#-------------------- CLASSES GERENCIADORAS ------------------------------
+
+# ============================
+# Abstract Factory
+# ============================
+class BibliotecaFactory(ABC):
+    @abstractmethod
+    def criar_item(self, tipo, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def criar_evento(self, nome, descricao, data, local):
+        pass
+
+    @abstractmethod
+    def criar_membro(self, nome, endereco, email):
+        pass
+
+
+# ============================
+# Fábrica Concreta: Biblioteca Física
+# ============================
+class BibliotecaPadraoFactory(BibliotecaFactory):
+    """
+    Fábrica concreta para itens físicos.
+
+    Implementa o Factory Method `criar_item` que cria objetos do tipo `Livro` ou `Revista`.
+    As fábricas são responsáveis por encapsular a lógica de criação de objetos e retornar
+    instâncias da hierarquia de domínio (definida em `classes.py`).
+    """
+    def criar_item(self, tipo, titulo, autor, editora, genero, total_exemplares, **kwargs):
+        if tipo == "livro":
+            builder = LivroBuilder()
+            builder.with_titulo(titulo).with_autor(autor).with_editora(editora).with_genero(genero).with_total_exemplares(total_exemplares)
+            builder.with_isbn(kwargs.get("isbn"))
+            return builder.build()
+        elif tipo == "revista":
+            builder = RevistaBuilder()
+            builder.with_titulo(titulo).with_autor(autor).with_editora(editora).with_genero(genero).with_total_exemplares(total_exemplares)
+            builder.with_edicao(kwargs.get("edicao"))
+            return builder.build()
+        else:
+            raise ValueError("Tipo inválido nesta fábrica! Use 'livro' ou 'revista'.")
+
+    def criar_evento(self, nome, descricao, data, local):
+        # Evento físico (presencial)
+        return Evento(nome, descricao, data, f"Auditório: {local}")
+
+    def criar_membro(self, nome, endereco, email):
+        # Membro físico (presencial)
+        return Membro(nome, endereco, email)
+
+
+# ============================
+# Fábrica Concreta: Biblioteca Digital
+# ============================
+class BibliotecaDigitalFactory(BibliotecaFactory):
+    """
+    Fábrica concreta para itens digitais.
+
+    Implementa o Factory Method `criar_item` para criar ebooks. Levanta
+    ValueError se o `link_download` não for fornecido, já que ebooks exigem
+    um link para acesso.
+    """
+    def criar_item(self, tipo, titulo, autor, editora, genero, total_exemplares, **kwargs):
+        if tipo == "ebook":
+            builder = EbookBuilder()
+            builder.with_titulo(titulo).with_autor(autor).with_editora(editora).with_genero(genero).with_total_exemplares(total_exemplares)
+            builder.with_formato(kwargs.get("formato", "PDF"))
+            builder.with_link_download(kwargs.get("link_download"))
+            return builder.build()
+        else:
+            raise ValueError("Tipo inválido nesta fábrica! Use 'ebook'.")
+
+    def criar_evento(self, nome, descricao, data, local=None):
+        # Evento digital (online)
+        return Evento(nome, descricao, data, "Plataforma: Zoom/Teams")
+
+    def criar_membro(self, nome, endereco, email):
+        # Usuário digital não precisa de endereço físico
+        return Membro(f"{nome} (Digital)", "Acesso Online", email)
+
+
+# NOTE: Item / Livro / Revista / Ebook classes are provided by `classes.py`.
+# The local re-definitions were removed to avoid shadowing the domain models
+# (which implement availability and circulation methods like
+# `verificar_disponibilidade`, `emprestar` and `devolver`).
+
+
+# ============================
+# Gerenciador de Acervo
+# ============================
 class GerenciadorAcervo:
-    def __init__(self) -> None:
+    def __init__(self, factory: BibliotecaFactory) -> None:
         self._item = []
-    
-    #Remove acentos e converte o texto para minúsculas para facilitar comparações.
+        self.factory = factory
+
     @staticmethod
     def normalizar(texto: str) -> str:
+        import unicodedata
         return ''.join(c for c in unicodedata.normalize('NFD', texto)
                        if unicodedata.category(c) != 'Mn').lower()
-    
+
     @property
     def itens(self) -> list:
         return list(self._item)
 
-    def cadastrar_item(self, titulo: str, autor: str, editora: str, genero: str, total_exemplares: int, tipo="livro", **kwargs) -> tuple:
+    def cadastrar_item(self, titulo: str, autor: str, editora: str, genero: str,
+                       total_exemplares: int, tipo="livro", factory_override: BibliotecaFactory = None, **kwargs) -> tuple:
         try:
-            #Cria o objeto do item com base no tipo especificado.
-            if tipo == "livro":
-                novo_item = Livro(titulo, autor, editora, genero, total_exemplares, kwargs.get("isbn"))
-            elif tipo == "revista":
-                novo_item = Revista(titulo, autor, editora, genero, total_exemplares, kwargs.get("edicao"))
-            elif tipo == "ebook":
-                novo_item = Ebook(titulo, autor, editora, genero, total_exemplares, kwargs.get("formato"), kwargs.get("link_download"))
-            else:
-                return False, "Tipo inválido! Use 'livro', 'revista' ou 'ebook'.", None
-            
-            #Adiciona o novo item à lista do acervo.
+            # Seleciona a fábrica a ser usada. Por padrão usamos a fábrica
+            # associada ao gerenciador (`self.factory`). Um `factory_override`
+            # pode ser passado (ex.: a `Biblioteca` força a `BibliotecaDigitalFactory`
+            # ao cadastrar um ebook). Em seguida chamamos o Factory Method
+            # `criar_item(...)` para delegar a criação do objeto à fábrica.
+            factory_to_use = factory_override if factory_override is not None else self.factory
+            novo_item = factory_to_use.criar_item(
+                tipo, titulo, autor, editora, genero, total_exemplares, **kwargs
+            )
             self._item.append(novo_item)
             return True, f"\n✔ {tipo.capitalize()} '{titulo}' cadastrado com sucesso.", novo_item
         except Exception as e:
-            return False, f"Ocorreu um erro ao cadastrar o item: {e}", None
+            return False, f"❗️ Erro ao cadastrar item: {e}", None
 
     def buscar_item(self, criterio: str, valor_busca: str) -> list:
         resultados = []
         valor_busca_lower = GerenciadorAcervo.normalizar(valor_busca)
-        #Itera sobre os itens e adiciona aos resultados se corresponderem ao critério.
         for item in self._item:
             if criterio == 'titulo' and valor_busca_lower in GerenciadorAcervo.normalizar(item.titulo):
                 resultados.append(item)
@@ -52,55 +143,65 @@ class GerenciadorAcervo:
             elif criterio == 'editora' and valor_busca_lower in GerenciadorAcervo.normalizar(item.editora):
                 resultados.append(item)
             elif criterio == 'genero' and valor_busca_lower in GerenciadorAcervo.normalizar(item.genero):
-                resultados.append(item) 
+                resultados.append(item)
         return resultados
-    
+
     def buscar_por_titulo_normalizado(self, titulo_normalizado: str) -> object | None:
         return next((i for i in self._item if GerenciadorAcervo.normalizar(i.titulo) == titulo_normalizado), None)
 
 
+
+# ============================
+# Gerenciador de Membros
+# ============================
 class GerenciadorMembros:
-    def __init__(self) -> None:
+    def __init__(self, factory: BibliotecaFactory) -> None:
         self._membros = []
+        self.factory = factory
 
     @property
     def membros(self) -> list:
         return list(self._membros)
 
     def cadastrar_membro(self, nome: str, endereco: str, email: str) -> tuple:
-        #Verifica se o e-mail já está cadastrado para evitar duplicatas.
         if any(m.email == email for m in self._membros):
             return False, f"\n❗️ Membro com email '{email}' já cadastrado.", None
-        
-        #Cria um novo objeto Membro e o adiciona à lista.
-        novo_membro = Membro(nome, endereco, email)
+
+        novo_membro = self.factory.criar_membro(nome, endereco, email)
         self._membros.append(novo_membro)
         return True, f"\n✔ Membro '{nome}' cadastrado com sucesso!", novo_membro
-    
-    def buscar_membro_por_email(self, email) -> Membro | None:
-        return next((membro for membro in self._membros if membro.email == email), None)
+
+    def buscar_membro_por_email(self, email) -> object | None:
+        return next((m for m in self._membros if m.email == email), None)
 
 
+
+# ============================
+# Gerenciador de Eventos
+# ============================
 class GerenciadorEventos:
-    def __init__(self) -> None:
+    def __init__(self, factory: BibliotecaFactory) -> None:
         self._eventos = []
+        self.factory = factory
 
     @property
     def eventos(self) -> list:
         return list(self._eventos)
 
-    def agendar_evento(self, nome: str, descricao: str, data: str, local: str) -> tuple:
+    def agendar_evento(self, nome: str, descricao: str, data: str, local: str = None) -> tuple:
         try:
-            novo_evento = Evento(nome, descricao, data, local)
+            novo_evento = self.factory.criar_evento(nome, descricao, data, local)
             self._eventos.append(novo_evento)
             return True, f"✔ Evento '{nome}' agendado com sucesso.", novo_evento
         except Exception as e:
-            return False, f"Ocorreu um erro ao agendar o evento: {e}", None
-    
+            return False, f"❗️ Erro ao agendar evento: {e}", None
+
     def cancelar_evento(self, nome_evento: str) -> tuple:
         nome_normalizado = GerenciadorAcervo.normalizar(nome_evento)
-        evento = next((e for e in self._eventos if GerenciadorAcervo.normalizar(e.nome) == nome_normalizado), None)
-        
+        evento = next(
+            (e for e in self._eventos if GerenciadorAcervo.normalizar(e.nome) == nome_normalizado),
+            None
+        )
         if evento:
             self._eventos.remove(evento)
             return True, f"✔ Evento '{evento.nome}' cancelado com sucesso."
@@ -243,12 +344,12 @@ class GerenciadorOperacoes:
 #------------------------ CLASSE DE CONTROLE ----------------------------
 class Biblioteca:
     #delega as operações para os gerenciadores
-    def __init__(self) -> None:
+    def __init__(self, factory=None) -> None:
         self._data_atual_simulada = datetime.now()
-        
-        self.acervo = GerenciadorAcervo()
-        self.membros = GerenciadorMembros()
-        self.eventos = GerenciadorEventos()
+        self.factory = factory or BibliotecaPadraoFactory()
+        self.acervo = GerenciadorAcervo(self.factory)
+        self.membros = GerenciadorMembros(self.factory)
+        self.eventos = GerenciadorEventos(self.factory)
         self.operacoes = GerenciadorOperacoes(self.acervo, self.membros)
 
     @property
@@ -272,6 +373,12 @@ class Biblioteca:
     def normalizar(self, texto: str):
         return self.acervo.normalizar(texto)
     def cadastrar_item(self, *args, **kwargs) -> tuple:
+        # If the requested item is an ebook, use the digital factory explicitly
+        tipo = kwargs.get('tipo') if 'tipo' in kwargs else (args[5] if len(args) > 5 else None)
+        # Roteamento da criação: se for ebook, força a fábrica digital.
+        # Isso garante que ebooks sejam sempre criados pela `BibliotecaDigitalFactory`.
+        if tipo == 'ebook':
+            return self.acervo.cadastrar_item(*args, factory_override=BibliotecaDigitalFactory(), **kwargs)
         return self.acervo.cadastrar_item(*args, **kwargs)
 
     def buscar_item(self, *args, **kwargs) -> list:
