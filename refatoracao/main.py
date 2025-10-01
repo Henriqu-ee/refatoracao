@@ -1,7 +1,7 @@
 import sys
 from biblioteca import Biblioteca
 from menu import menu_principal
-from acervo_padrao import *
+from acervo_padrao import item_padrao, eventos_padrao, membros_padrao
 
 if __name__ == "__main__":
     biblioteca = Biblioteca()
