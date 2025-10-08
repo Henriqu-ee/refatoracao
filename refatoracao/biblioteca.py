@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 import unicodedata
 from collections import Counter
+from policies import DefaultEmprestimoPolicy, DefaultMultaPolicy, EmprestimoPolicy, MultaPolicy
 
 from classes import Evento, Multa, Ebook, Reserva, Membro, Emprestimo, Livro, Revista
 from builders import LivroBuilder, RevistaBuilder, EbookBuilder
@@ -209,7 +210,8 @@ class GerenciadorEventos:
 
 
 class GerenciadorOperacoes:
-    def __init__(self, gerenciador_acervo: GerenciadorAcervo, gerenciador_membros: GerenciadorMembros) -> None:
+    def __init__(self, gerenciador_acervo: GerenciadorAcervo, gerenciador_membros: GerenciadorMembros,
+                 emprestimo_policy: EmprestimoPolicy = None, multa_policy: MultaPolicy = None) -> None:
         self._emprestimos = []
         self._reservas = []
         self._multas = []
@@ -218,6 +220,8 @@ class GerenciadorOperacoes:
         #Injeção de dependência dos outros gerenciadores
         self.acervo = gerenciador_acervo
         self.membros = gerenciador_membros
+        self.emprestimo_policy = emprestimo_policy or DefaultEmprestimoPolicy()
+        self.multa_policy = multa_policy or DefaultMultaPolicy()
 
     @property
     def emprestimos(self) -> list: 
@@ -274,7 +278,8 @@ class GerenciadorOperacoes:
         
         #Se o item estiver disponível, realiza o empréstimo.
         if item.emprestar():
-            data_devolucao = data_atual + timedelta(days=DIAS_EMPRESTIMO)
+            dias = self.emprestimo_policy.dias_devolucao(item, membro)
+            data_devolucao = data_atual + timedelta(days=dias)
             emprestimo = Emprestimo(item, membro, data_atual, data_devolucao)
             self._emprestimos.append(emprestimo)
             self._historico_emprestimo.append(emprestimo)
@@ -302,10 +307,17 @@ class GerenciadorOperacoes:
         emprestimo.livro.devolver()
         self._emprestimos.remove(emprestimo)
         
-        #Verifica se há reservas para o item devolvido e atende a primeira da fila.
+        # Verifica se há reservas para o item devolvido e notifica o primeiro da fila.
         for reserva in self._reservas[:]:
             if GerenciadorAcervo.normalizar(reserva.livro.titulo) == titulo_normalizado:
-                print(f"\n🔔 Notificação: O livro '{reserva.livro.titulo}' ficou disponível e foi emprestado para {reserva.membro.nome}.")
+                # Notifica via Observer (não bloquear a devolução em caso de falha).
+                try:
+                    from notifications import notify_reservation
+                    notify_reservation(reserva)
+                except Exception as e:
+                    print(f"Erro ao notificar reserva: {e}")
+                # Remove a reserva notificada da fila e tenta atender a reserva
+                # mantendo comportamento anterior (empresta ao membro reservado).
                 self._reservas.remove(reserva)
                 self.realizar_emprestimo(reserva.membro.email, reserva.livro.titulo, data_atual)
                 break
@@ -324,7 +336,12 @@ class GerenciadorOperacoes:
         for emprestimo in atrasados:
             multa_existente = next((m for m in self._multas if m.emprestimo_atrasado == emprestimo), None)
             if not multa_existente:
-                nova_multa = Multa(emprestimo, 0)
+                # Calcula valor via policy
+                dias = (data_atual - emprestimo.data_devolucao_prevista).days
+                valor = 0.0
+                if dias > 0:
+                    valor = dias * self.multa_policy.valor_por_dia(emprestimo.livro, emprestimo.membro)
+                nova_multa = Multa(emprestimo, valor)
                 nova_multa.atualizar_valor(data_atual)
                 self._multas.append(nova_multa)
                 mensagens.append(
@@ -332,7 +349,7 @@ class GerenciadorOperacoes:
                     f"   - Valor: R$ {nova_multa.valor:.2f} ({nova_multa.dias_atraso} dias de atraso)."
                 )           
             else:
-                #Atualiza valor e dias de atraso
+                #Atualiza valor e dias de atraso usando a policy
                 multa_existente.atualizar_valor(data_atual)
                 mensagens.append(
                     f"🟡 Multa ATUALIZADA para '{emprestimo.membro.nome}' pelo atraso de '{emprestimo.livro.titulo}'.\n"
@@ -344,13 +361,14 @@ class GerenciadorOperacoes:
 #------------------------ CLASSE DE CONTROLE ----------------------------
 class Biblioteca:
     #delega as operações para os gerenciadores
-    def __init__(self, factory=None) -> None:
+    def __init__(self, factory=None, emprestimo_policy=None, multa_policy=None) -> None:
         self._data_atual_simulada = datetime.now()
         self.factory = factory or BibliotecaPadraoFactory()
         self.acervo = GerenciadorAcervo(self.factory)
         self.membros = GerenciadorMembros(self.factory)
         self.eventos = GerenciadorEventos(self.factory)
-        self.operacoes = GerenciadorOperacoes(self.acervo, self.membros)
+        # Passa as policies para o gerenciador de operações (ou usa defaults)
+        self.operacoes = GerenciadorOperacoes(self.acervo, self.membros, emprestimo_policy, multa_policy)
 
     @property
     def data_atual(self):
