@@ -21,8 +21,14 @@ Sistema de Biblioteca desenvolvido em **Python** como projeto acadêmico da disc
 ---
 
 ## 🆕 Refatoração  
-Em andamento para melhorar a arquitetura, modularidade e aplicar **Design Patterns**.  
-
+- Padrões de Criação
+  - Fábrica Abstrata
+  - Construtor
+  - Método de Fábrica
+- Padrões de comportamento
+  - Observador
+  - Estratégia
+   
 ---
 
 ## ⚠️ Implementação Parcial  
