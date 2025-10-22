@@ -1,40 +1,41 @@
 # 📖 Sistema de Gestão de Biblioteca  
 
-Sistema de Biblioteca desenvolvido em **Python** como projeto acadêmico da disciplina de **Projeto de Software**.  
-
+Projeto acadêmico desenvolvido em Python para a disciplina de Projeto de Software, com foco na aplicação de Padrões de Projeto (Design Patterns), boas práticas de arquitetura e orientação a objetos.
 ---
 
 ## 🚀 Funcionalidades  
 
 ### ✅ Implementadas  
-- 🔍 **Busca no Catálogo**: Pesquisa por título, autor, gênero, editora e outros filtros.  
-- 📚 **Empréstimo e Devolução**: Usuários podem retirar e devolver livros.  
-- ⏳ **Sistema de Reservas**: Reserva de livros indisponíveis.  
-- ⚠️ **Notificações de Atraso**: Alertas automáticos para itens em atraso.  
-- 👤 **Gestão de Membros**: Cadastro, edição e consulta de membros.  
-- 💸 **Cálculo e Pagamento de Multas**: Multas automáticas por atraso e opção de pagamento.  
-- 📦 **Gestão de Inventário**: Cadastro, consulta e rastreamento de itens do acervo.  
-- 📅 **Gestão de Eventos**: Agendamento, divulgação e cancelamento de eventos.  
-- 📲 **E-books e Recursos Online**: Cadastro e acesso a e-books e links digitais.  
-- 📊 **Relatórios e Análises**: Geração de relatórios de uso, empréstimos e tendências.  
+- 🔍 Busca no Catálogo – Pesquisa por título, autor, gênero, editora e outros filtros.
+- 📚 Empréstimo e Devolução de Itens – Controle completo de circulação de livros, revistas e e-books.
+- ⏳ Reservas Automáticas – Usuários podem reservar itens indisponíveis.
+- ⚠️ Notificações de Atraso e Disponibilidade – Implementadas com o padrão Observer.
+- 👤 Gestão de Membros – Cadastro, consulta e validação de membros.
+- 💸 Multas Automáticas – Geração e atualização de multas por atraso, com cálculo via Strategy.
+- 📦 Gestão de Acervo – Cadastro, edição e rastreamento de itens físicos e digitais.
+- 📅 Eventos da Biblioteca – Agendamento, divulgação e cancelamento de eventos.
+- 💾 Persistência de Dados – Exportação e importação do acervo e do estado geral em formato JSON.
+- 📊 Relatórios de Uso – Estatísticas sobre empréstimos, membros e multas.
 
 ---
 
-## 🆕 Refatoração  
-- Padrões de Criação
-  - Fábrica Abstrata
-  - Construtor
-  - Método de Fábrica
-- Padrões de comportamento
-  - Observador
-  - Estratégia
+## 🧠 Padrões de Projeto Utilizados
+### 🏗️ Criação (Creational)
+- Factory Method → Criação de diferentes tipos de itens (livros, revistas, e-books).
+- Abstract Factory → Criação de fábricas específicas (biblioteca física e digital).
+- Builder → Construção fluente e validada de objetos do acervo.
+### 🔄 Comportamento (Behavioral)
+- Strategy → Políticas de cálculo para prazos de devolução e multas.
+- Observer → Notificações automáticas de reservas e atrasos.
+- Chain of Responsibility → Validação flexível de campos (membros e itens).
+### 🧰 Estrutural (Structural)
+- Facade → Interface simplificada para persistência e operações administrativas.
    
 ---
 
-## ⚠️ Implementação Parcial  
-- 🌐 **Integração Web/Mobile**: Não implementado.  
-- 💾 **Persistência em Banco de Dados**: Dados são mantidos apenas em memória durante a execução.  
-
+## ⚠️ Limitações e Implementação Parcial
+- 🌐 Interface Web/Mobile: Ainda não implementada.
+- 🗄️ Banco de Dados: Dados são mantidos em memória (persistência opcional via arquivos JSON).
 ---
 
 ## 🛠️ Instalação e Execução  
@@ -59,46 +60,56 @@ Sistema de Biblioteca desenvolvido em **Python** como projeto acadêmico da disc
 4. Navegue pelo menu interativo:
    - Digite o número da opção desejada e pressione Enter.
    - Os dados são carregados automaticamente a partir dos arquivos padrão.
-
-## 🧶 Design Patterns
-
-### Creational
-
-   - Singleton
-      - Garante que a classe Biblioteca tenha apenas uma instância durante a execução.
-
-   - Factory Method
-      - Utilizado para criar diferentes tipos de itens do acervo (livros, e-books, etc).
     
 ## 🏗️ Estrutura do Projeto
-
-### 📁 Estrutura modular e extensível, facilitando futuras adaptações:
-
-   - Persistência em banco de dados
-
-   - Interface web ou mobile
+``` bash
+  📁 sistema-biblioteca/
+  │
+  ├── biblioteca.py        # Classes principais e gerenciadores (acervo, membros, eventos, operações)
+  ├── builders.py          # Builders para criação de itens do acervo
+  ├── classes.py           # Modelos de domínio (Livro, Revista, Ebook, Membro, etc.)
+  ├── facade.py            # Interface de persistência (salvar/carregar estado)
+  ├── menu.py              # Interface textual interativa
+  ├── notifications.py     # Implementação do padrão Observer
+  ├── policies.py          # Estratégias para prazos e multas
+  ├── validators.py        # Validação com Chain of Responsibility
+  ├── main.py              # Ponto de entrada do sistema
+  └── acervo_padrao.py     # Dados iniciais de exemplo
+```
 
 ## 💻 Como Usar
 
-- Execute:
-   ``` bash
-   python main.py
-   ```
-- Siga as instruções do menu para acessar todas as funcionalidades.
-- Cadastre membros, livros, realize empréstimos, reservas e gere relatórios.
+- Execute o sistema com python main.py.
+- Navegue pelo menu interativo para:
+-- Gerenciar acervo, eventos e membros.
+-- Realizar empréstimos, devoluções e reservas.
+-- Gerar relatórios e salvar o estado atual da biblioteca.
 
 ## 👥 Perfis de Usuário
 
--Administrador: Acesso completo a todas as funcionalidades.
--Membro: Consulta ao acervo, empréstimos, reservas e acesso a e-books.
+-Administrador: Acesso total ao acervo, membros, eventos, relatórios e persistência de dados
+-Membro: Consulta, empréstimo, reserva e acesso a e-books.
+
+## 💾 Persistência
+
+A persistência é feita por meio da Facade, salvando os dados em JSON com backup automático.
+
+Exemplo:
+  ``` bash
+  from facade import BibliotecaFacade
+  facade = BibliotecaFacade(biblioteca)
+  facade.save("dados/biblioteca.json")
+  facade.load("dados/biblioteca.json", replace=True)
+  ```
 
 ## 📌 Sobre
 
 ### 📚 Projeto acadêmico sem fins comerciais.
-Desenvolvido para fins de aprendizado e demonstração de boas práticas em Python e orientação a objetos.
+Projeto acadêmico sem fins comerciais, desenvolvido com foco em aprendizado e aplicação prática de princípios de Engenharia de Software.
 
 Recursos
 
 - 🐍 Python
-- ⚙️ Estrutura modular e extensível
-- 💾 Fácil adaptação para banco de dados ou interface web
+- 🧩 Padrões de Projeto
+- ⚙️ Arquitetura modular e extensível
+- 💾 Persistência simples em JSON
