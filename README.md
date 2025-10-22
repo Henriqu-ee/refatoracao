@@ -81,14 +81,14 @@ Projeto acadêmico desenvolvido em Python para a disciplina de Projeto de Softwa
 
 - Execute o sistema com python main.py.
 - Navegue pelo menu interativo para:
- - Gerenciar acervo, eventos e membros.
- - Realizar empréstimos, devoluções e reservas.
- - Gerar relatórios e salvar o estado atual da biblioteca.
+ -  Gerenciar acervo, eventos e membros.
+ -  Realizar empréstimos, devoluções e reservas.
+ -  Gerar relatórios e salvar o estado atual da biblioteca.
 
 ## 👥 Perfis de Usuário
 
--Administrador: Acesso total ao acervo, membros, eventos, relatórios e persistência de dados
--Membro: Consulta, empréstimo, reserva e acesso a e-books.
+- Administrador: Acesso total ao acervo, membros, eventos, relatórios e persistência de dados
+- Membro: Consulta, empréstimo, reserva e acesso a e-books.
 
 ## 💾 Persistência
 
