@@ -118,12 +118,32 @@ class GerenciadorAcervo:
 
     def cadastrar_item(self, titulo: str, autor: str, editora: str, genero: str,
                        total_exemplares: int, tipo="livro", factory_override: BibliotecaFactory = None, **kwargs) -> tuple:
+        # Validação via Chain of Responsibility
         try:
-            # Seleciona a fábrica a ser usada. Por padrão usamos a fábrica
-            # associada ao gerenciador (`self.factory`). Um `factory_override`
-            # pode ser passado (ex.: a `Biblioteca` força a `BibliotecaDigitalFactory`
-            # ao cadastrar um ebook). Em seguida chamamos o Factory Method
-            # `criar_item(...)` para delegar a criação do objeto à fábrica.
+            from validators import run_chain, TipoHandler, TotalExemplaresHandler, EbookLinkHandler
+            context = {
+                'titulo': titulo,
+                'autor': autor,
+                'editora': editora,
+                'genero': genero,
+                'total_exemplares': total_exemplares,
+                'tipo': tipo,
+                'link_download': kwargs.get('link_download')
+            }
+            handlers = [TipoHandler(), TotalExemplaresHandler(), EbookLinkHandler()]
+            ok, msg = run_chain(handlers, context)
+            if not ok:
+                return False, f"\n❗️ Erro ao cadastrar item: {msg}", None
+        except Exception:
+            # Em caso de falha de import/validação, ignoramos a validação e tentamos criar o item
+            pass
+
+        # Seleciona a fábrica a ser usada. Por padrão usamos a fábrica
+        # associada ao gerenciador (`self.factory`). Um `factory_override`
+        # pode ser passado (ex.: a `Biblioteca` força a `BibliotecaDigitalFactory`
+        # ao cadastrar um ebook). Em seguida chamamos o Factory Method
+        # `criar_item(...)` para delegar a criação do objeto à fábrica.
+        try:
             factory_to_use = factory_override if factory_override is not None else self.factory
             novo_item = factory_to_use.criar_item(
                 tipo, titulo, autor, editora, genero, total_exemplares, **kwargs
@@ -165,8 +185,17 @@ class GerenciadorMembros:
         return list(self._membros)
 
     def cadastrar_membro(self, nome: str, endereco: str, email: str) -> tuple:
-        if any(m.email == email for m in self._membros):
-            return False, f"\n❗️ Membro com email '{email}' já cadastrado.", None
+        # Validação via Chain of Responsibility para membros
+        try:
+            from validators import run_chain, EmailFormatHandler, DuplicateMemberHandler
+            context = {'nome': nome, 'endereco': endereco, 'email': email}
+            handlers = [EmailFormatHandler(), DuplicateMemberHandler(lambda e: any(m.email == e for m in self._membros))]
+            ok, msg = run_chain(handlers, context)
+            if not ok:
+                return False, f"\n❗️ Erro no cadastro do membro: {msg}", None
+        except Exception:
+            # Se algo falhar na validação, continua e deixa a fábrica tratar erros
+            pass
 
         novo_membro = self.factory.criar_membro(nome, endereco, email)
         self._membros.append(novo_membro)
