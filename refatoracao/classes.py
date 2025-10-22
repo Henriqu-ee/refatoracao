@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-
 from datetime import datetime
+import re
 
 VALOR_MULTA = 0.5
 
@@ -228,8 +228,9 @@ class Membro:
     @email.setter
     def email(self, novo_email: str) -> None:
         #Define o email do membro, com validação de formato.
-        if not novo_email.endswith("@email.com"):
-            raise ValueError("O email deve terminar com @email.com")
+        # Validação mais permissiva: deve seguir um formato básico de email.
+        if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", novo_email):
+            raise ValueError("Formato de email inválido. Informe um email válido.")
         self._email = novo_email
         
     def __str__(self) -> str:
