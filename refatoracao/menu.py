@@ -2,6 +2,8 @@ import sys
 import time
 import os
 from classes import Ebook
+from facade import BibliotecaFacade
+from datetime import datetime
 
 #Define a senha de acesso para a área administrativa.
 SENHA_ADMIN = "admin123"
@@ -69,7 +71,8 @@ def menu_administrador(biblioteca):
         print("3. Gerenciar eventos")
         print("4. Avançar o tempo no sistema")
         print("5. Ver relatório de uso")
-        print("6. Logout")
+        print("6. Persistência (Salvar / Carregar / Backup)")
+        print("7. Logout")
         escolha = input("Escolha uma opção: ")
 
         if escolha == '1':
@@ -97,8 +100,11 @@ def menu_administrador(biblioteca):
             relatorio = biblioteca.relatorio_uso()
             exibir_relatorio(relatorio)
             input("\nPressione ENTER para continuar...")
-            
         elif escolha == '6':
+            # Persistência (Salvar / Carregar / Backup)
+            fac = BibliotecaFacade(biblioteca)
+            menu_persistencia(biblioteca, fac)
+        elif escolha == '7':
             #Retorna ao menu principal.
             print("Fazendo logout de administrador...")
             time.sleep(1)
@@ -583,3 +589,144 @@ def pagamento_multas(biblioteca, membro):
         print("\n❌ Pagamento não efetuado. A devolução não pode ser concluída.")
         time.sleep(1.5)
         return False #Retorna False se o pagamento foi recusado.
+
+
+def menu_persistencia(biblioteca, facade: BibliotecaFacade):
+    import glob
+    import textwrap
+
+    while True:
+        limpar_tela()
+        print("\n--- 💾 Persistência e Backup (Admin) ---")
+        print("1. Salvar estado (criar arquivo .json)")
+        print("2. Restaurar a partir de um arquivo (ADICIONAR dados ao atual)")
+        print("3. Restaurar e SUBSTITUIR tudo (PERIGOSO)")
+        print("4. Exportar somente o catálogo (acervo)")
+        print("5. Importar catálogo (acrescentar itens ao acervo)")
+        print("6. Listar backups disponíveis e restaurar")
+        print("7. Ajuda (explicações rápidas)")
+        print("8. Voltar")
+        escolha = input("Escolha uma opção: ")
+
+        if escolha == '1':
+            default = 'state.json'
+            path = input(f"Salvar em (ENTER para '{default}'): ").strip() or default
+            if os.path.exists(path):
+                sobrescrever = input(f"O arquivo '{path}' já existe. Deseja sobrescrever? (sim/não): ").strip().lower()
+                if sobrescrever != 'sim':
+                    print("Operação cancelada pelo usuário.")
+                    input("\nPressione ENTER para continuar...")
+                    continue
+
+            ok, msg, backup = facade.save(path)
+            print(msg)
+            if ok:
+                if backup:
+                    print(f"Um backup do arquivo anterior foi criado em: {backup}")
+                else:
+                    print("Nenhum backup anterior foi criado (arquivo novo ou falha ao criar backup).")
+            input("\nPressione ENTER para continuar...")
+
+        elif escolha == '2':
+            default = 'state.json'
+            path = input(f"Arquivo para restaurar (acrescentar dados) (ENTER para '{default}'): ").strip() or default
+            print("Isto irá ADICIONAR os dados do arquivo ao estado atual. Entradas duplicadas podem ocorrer.")
+            confirmar = input("Deseja continuar? (sim/não): ").strip().lower()
+            if confirmar != 'sim':
+                print("Operação cancelada.")
+                input("\nPressione ENTER para continuar...")
+                continue
+            ok, msg = facade.load(path, replace=False)
+            print(msg)
+            input("\nPressione ENTER para continuar...")
+
+        elif escolha == '3':
+            default = 'state.json'
+            path = input(f"Arquivo para restaurar (SUBSTITUIR tudo) (ENTER para '{default}'): ").strip() or default
+            print(textwrap.fill("ATENÇÃO: Esta operação irá APAGAR o estado atual e substituí-lo pelo conteúdo do arquivo. Faça um backup primeiro se não tiver certeza.", 70))
+            confirmar = input("Confirmar substituição COMPLETA? (sim/não): ").strip().lower()
+            if confirmar != 'sim':
+                print("Operação de substituição cancelada.")
+                input("\nPressione ENTER para continuar...")
+                continue
+            ok, msg = facade.load(path, replace=True)
+            print(msg)
+            input("\nPressione ENTER para continuar...")
+
+        elif escolha == '4':
+            default = 'acervo_export.json'
+            path = input(f"Salvar catálogo em (ENTER para '{default}'): ").strip() or default
+            ok, msg = facade.export_acervo(path)
+            print(msg)
+            input("\nPressione ENTER para continuar...")
+
+        elif escolha == '5':
+            default = 'acervo_export.json'
+            path = input(f"Arquivo de catálogo para importar (acrescentar) (ENTER para '{default}'): ").strip() or default
+            print("Isto irá tentar adicionar os itens do arquivo ao catálogo atual. Itens inválidos podem ser ignorados.")
+            confirmar = input("Deseja continuar? (sim/não): ").strip().lower()
+            if confirmar != 'sim':
+                print("Importação cancelada.")
+                input("\nPressione ENTER para continuar...")
+                continue
+            ok, msg = facade.import_acervo(path, merge=True)
+            print(msg)
+            input("\nPressione ENTER para continuar...")
+
+        elif escolha == '6':
+            # Lista backups no diretório corrente com padrão *.backup.*
+            arquivos = sorted(glob.glob('*.backup.*'))
+            if not arquivos:
+                print("Nenhum arquivo de backup encontrado no diretório atual.")
+                input("\nPressione ENTER para continuar...")
+                continue
+            print("Backups encontrados:")
+            for i, a in enumerate(arquivos, start=1):
+                print(f"{i}. {a}")
+            selecionado = input("Escolha um número para restaurar ou ENTER para cancelar: ").strip()
+            if not selecionado:
+                continue
+            try:
+                idx = int(selecionado) - 1
+                backup_path = arquivos[idx]
+            except Exception:
+                print("Seleção inválida.")
+                input("\nPressione ENTER para continuar...")
+                continue
+
+            print("Você pode: 1) Adicionar (manter dados atuais) ou 2) Substituir tudo com este backup.")
+            modo = input("Escolha 1 para adicionar ou 2 para substituir (ENTER para 1): ").strip() or '1'
+            if modo not in ('1', '2'):
+                print("Modo inválido. Cancelando.")
+                input("\nPressione ENTER para continuar...")
+                continue
+            if modo == '2':
+                confirmar = input("CONFIRMA substituir tudo com este backup? (sim/não): ").strip().lower()
+                if confirmar != 'sim':
+                    print("Operação cancelada.")
+                    input("\nPressione ENTER para continuar...")
+                    continue
+                ok, msg = facade.load(backup_path, replace=True)
+                print(msg)
+            else:
+                ok, msg = facade.load(backup_path, replace=False)
+                print(msg)
+            input("\nPressione ENTER para continuar...")
+
+        elif escolha == '7':
+            limpar_tela()
+            print("Ajuda rápida - persistência e backups:\n")
+            print("Salvar estado: cria um arquivo JSON com todos os dados (itens, membros, eventos). Use para guardar o trabalho antes de fechar o programa.")
+            print("Restaurar (Adicionar): carrega os dados de um arquivo e adiciona ao que já existe no sistema. Útil para mesclar catálogos.")
+            print("Restaurar e Substituir: APAGA o estado atual e carrega apenas o que estiver no arquivo. Perigoso sem backup.")
+            print("Exportar catálogo: grava só o acervo (útil para compartilhar o catálogo).")
+            print("Importar catálogo: adiciona itens ao acervo atual a partir de um arquivo de catálogo.")
+            print("Listar backups: mostra arquivos de backup gerados anteriormente; permite restaurar a partir deles.")
+            print('\nRecomendações: sempre salve/backup antes de substituir o estado. Se tiver dúvidas, escolha "Restaurar (Adicionar)".')
+            input("\nPressione ENTER para continuar...")
+
+        elif escolha == '8':
+            break
+        else:
+            print("Opção inválida.")
+            time.sleep(1.5)
