@@ -12,6 +12,7 @@ import tempfile
 import shutil
 
 from classes import Livro, Revista, Ebook
+from adapters import CsvCatalogAdapter
 
 
 class BibliotecaFacade:
@@ -151,7 +152,12 @@ class BibliotecaFacade:
             return False, f"❗️ Erro ao exportar acervo: {e}"
 
     def import_acervo(self, path: str, merge: bool = True) -> (bool, str):
+        # If CSV file, delegate to CsvCatalogAdapter
         try:
+            if path.lower().endswith('.csv'):
+                adapter = CsvCatalogAdapter(self.biblioteca)
+                return adapter.import_file(path, merge=merge)
+
             with open(path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
         except Exception as e:
