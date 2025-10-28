@@ -3,6 +3,7 @@ import time
 import os
 from classes import Ebook
 from facade import BibliotecaFacade
+from proxies import EbookProxy
 from datetime import datetime
 
 #Define a senha de acesso para a área administrativa.
@@ -490,7 +491,12 @@ def menu_membro(biblioteca, membro):
                     None
                 )
                 if ebook_encontrado:
-                    print(f"Acesse o livro clicando aqui 👉 {ebook_encontrado.link_download}")
+                    proxy = EbookProxy(ebook_encontrado, biblioteca)
+                    ok_link, payload = proxy.get_link(membro)
+                    if ok_link:
+                        print(f"Acesse o livro clicando aqui 👉 {payload}")
+                    else:
+                        print(payload)
                 else:
                     print("❗️ Ebook não encontrado.")
             input("\nPressione ENTER para continuar...")
@@ -722,6 +728,13 @@ def menu_persistencia(biblioteca, facade: BibliotecaFacade):
             print("Exportar catálogo: grava só o acervo (útil para compartilhar o catálogo).")
             print("Importar catálogo: adiciona itens ao acervo atual a partir de um arquivo de catálogo.")
             print("Listar backups: mostra arquivos de backup gerados anteriormente; permite restaurar a partir deles.")
+            print('\nFormato CSV esperado para importação de catálogos:')
+            print('  tipo,titulo,autor,editora,genero,total_exemplares,extra1,extra2')
+            print('  onde tipo ∈ {livro,revista,ebook}; extras: livro->isbn | revista->edicao | ebook->formato,link_download')
+            print('\nExemplo:')
+            print('  livro,Csv Livro,Autor X,Editora Y,Ficcao,2,9781234567890,')
+            print('  ebook,Ebook Exemplo,Autor E,Editora E,Digital,1,EPUB,https://example.com/ebook')
+            print('\nPara documentação mais completa, veja o arquivo README.md na raiz do projeto.')
             print('\nRecomendações: sempre salve/backup antes de substituir o estado. Se tiver dúvidas, escolha "Restaurar (Adicionar)".')
             input("\nPressione ENTER para continuar...")
 
