@@ -56,7 +56,7 @@ class TotalExemplaresHandler(Handler):
             if total_int < 0:
                 return False, "Total de exemplares deve ser não-negativo."
             return True, None
-        except Exception:
+        except (ValueError, TypeError):
             return False, "Total de exemplares deve ser um número inteiro."
 
 
