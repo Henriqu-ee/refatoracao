@@ -4,6 +4,9 @@ Fornece uma API para registrar observadores (objetos com método `update(reserva
 e notificar quando uma reserva precisa ser comunicada.
 """
 from typing import List, Protocol
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ReservationObserver(Protocol):
@@ -31,8 +34,9 @@ def notify_reservation(reserva) -> None:
     for obs in list(_observers):
         try:
             obs.update(reserva)
-        except Exception as e:
-            print(f"Erro ao notificar observador {obs}: {e}")
+        except Exception:
+            # Log the observer failure but continue notifying others
+            logger.exception("Erro ao notificar observador %r", obs)
 
 
 # Implementação padrão simples: print de notificação.
@@ -43,6 +47,7 @@ class SimplePrintObserver:
             membro = reserva.membro
             print(f"\n🔔 Notificação (Observer): O livro '{titulo}' ficou disponível para {membro.nome} ({membro.email}).")
         except Exception:
+            logger.exception("Erro ao formatar notificação de reserva: %r", reserva)
             print("🔔 Notificação: reserva disponível (detalhes indisponíveis)")
 
 
