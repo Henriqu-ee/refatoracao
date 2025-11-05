@@ -3,6 +3,9 @@ from datetime import datetime, timedelta
 import unicodedata
 from collections import Counter
 from policies import DefaultEmprestimoPolicy, DefaultMultaPolicy, EmprestimoPolicy, MultaPolicy
+import logging
+
+logger = logging.getLogger(__name__)
 
 from classes import Evento, Multa, Ebook, Reserva, Membro, Emprestimo, Livro, Revista
 from builders import LivroBuilder, RevistaBuilder, EbookBuilder
@@ -136,7 +139,8 @@ class GerenciadorAcervo:
                 return False, f"\n❗️ Erro ao cadastrar item: {msg}", None
         except Exception:
             # Em caso de falha de import/validação, ignoramos a validação e tentamos criar o item
-            pass
+            # mas registramos a exceção para facilitar depuração
+            logger.exception("Erro durante validação de item: %s (%s)", titulo, tipo)
 
         # Seleciona a fábrica a ser usada. Por padrão usamos a fábrica
         # associada ao gerenciador (`self.factory`). Um `factory_override`
@@ -151,6 +155,7 @@ class GerenciadorAcervo:
             self._item.append(novo_item)
             return True, f"\n✔ {tipo.capitalize()} '{titulo}' cadastrado com sucesso.", novo_item
         except Exception as e:
+            logger.exception("Falha ao cadastrar item %s (%s)", titulo, tipo)
             return False, f"❗️ Erro ao cadastrar item: {e}", None
 
     def buscar_item(self, criterio: str, valor_busca: str) -> list:
@@ -195,7 +200,7 @@ class GerenciadorMembros:
                 return False, f"\n❗️ Erro no cadastro do membro: {msg}", None
         except Exception:
             # Se algo falhar na validação, continua e deixa a fábrica tratar erros
-            pass
+            logger.exception("Erro durante validação de membro: %s <%s>", nome, email)
 
         novo_membro = self.factory.criar_membro(nome, endereco, email)
         self._membros.append(novo_membro)
@@ -224,6 +229,7 @@ class GerenciadorEventos:
             self._eventos.append(novo_evento)
             return True, f"✔ Evento '{nome}' agendado com sucesso.", novo_evento
         except Exception as e:
+            logger.exception("Falha ao agendar evento %s", nome)
             return False, f"❗️ Erro ao agendar evento: {e}", None
 
     def cancelar_evento(self, nome_evento: str) -> tuple:
@@ -343,8 +349,8 @@ class GerenciadorOperacoes:
                 try:
                     from notifications import notify_reservation
                     notify_reservation(reserva)
-                except Exception as e:
-                    print(f"Erro ao notificar reserva: {e}")
+                except Exception:
+                    logger.exception("Erro ao notificar reserva para %s", reserva.membro.email)
                 # Remove a reserva notificada da fila e tenta atender a reserva
                 # mantendo comportamento anterior (empresta ao membro reservado).
                 self._reservas.remove(reserva)
