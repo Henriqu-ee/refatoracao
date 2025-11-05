@@ -6,6 +6,9 @@ e permite contabilizar acessos (contador simples) sem modificar a classe `Ebook`
 from __future__ import annotations
 from typing import Tuple
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 class EbookProxy:
     def __init__(self, ebook, biblioteca) -> None:
@@ -29,7 +32,8 @@ class EbookProxy:
             if multas:
                 return False, f"❗️ Acesso negado. O membro '{membro.nome}' possui multas pendentes."
         except Exception:
-            # Se não for possível verificar multas, negar por segurança
+            # Se não for possível verificar multas, negar por segurança e logar
+            logger.exception("Falha ao verificar multas para membro %s", getattr(membro, 'email', None))
             return False, "❗️ Não foi possível verificar o status do membro. Contate o administrador."
 
         # Registra acesso simples (contador) sem alterar a classe original
@@ -37,7 +41,7 @@ class EbookProxy:
             count = getattr(self._ebook, '_access_count', 0) + 1
             setattr(self._ebook, '_access_count', count)
         except Exception:
-            pass
+            logger.exception("Falha ao incrementar contador de acessos para ebook %s", getattr(self._ebook, 'titulo', None))
 
         return True, getattr(self._ebook, 'link_download', '')
 
@@ -46,6 +50,7 @@ class EbookProxy:
         try:
             return self._ebook.descricao()
         except Exception:
+            logger.exception("Falha ao obter descricao do ebook %s", getattr(self._ebook, 'titulo', None))
             return str(self._ebook)
 
     @property
