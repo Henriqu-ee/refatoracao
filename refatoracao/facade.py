@@ -10,6 +10,9 @@ from typing import Any, Dict
 import os
 import tempfile
 import shutil
+import logging
+
+logger = logging.getLogger(__name__)
 
 from classes import Livro, Revista, Ebook
 from adapters import CsvCatalogAdapter
@@ -67,8 +70,8 @@ class BibliotecaFacade:
                     backup_path = f"{path}.backup.{timestamp}"
                     shutil.copy2(path, backup_path)
                 except Exception:
-                    # Não falha todo o save se o backup não puder ser criado; continua
-                    pass
+                    # Não falha todo o save se o backup não puder ser criado; continua, mas registra
+                    logger.exception("Falha ao criar backup para %s", path)
 
             # Escrita atômica: escreve em arquivo temporário no mesmo diretório e faz replace
             tmp_dir = dirpath or '.'
@@ -84,11 +87,12 @@ class BibliotecaFacade:
                     try:
                         os.remove(tmp_path)
                     except Exception:
-                        pass
+                        logger.exception("Falha ao remover arquivo temporário %s", tmp_path)
 
             # Retorna o caminho do backup (ou None quando não criado)
             return True, f"✔ Estado salvo em {path}", backup_path
         except Exception as e:
+            logger.exception("Falha ao salvar estado em %s", path)
             return False, f"❗️ Erro ao salvar: {e}", None
 
     def load(self, path: str, replace: bool = False) -> (bool, str):
@@ -100,6 +104,7 @@ class BibliotecaFacade:
             with open(path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
         except Exception as e:
+            logger.exception("Falha ao abrir/ler arquivo %s", path)
             return False, f"❗️ Erro ao abrir arquivo: {e}"
 
         try:
@@ -128,17 +133,18 @@ class BibliotecaFacade:
                 try:
                     self.biblioteca.cadastrar_membro(nome, endereco, email)
                 except Exception:
-                    # ignora membros problemáticos e continua
-                    pass
+                    # ignora membros problemáticos e continua, mas registra o erro
+                    logger.exception("Falha ao cadastrar membro durante load: %s <%s>", nome, email)
 
             for nome, descricao, data_evt, local in eventos:
                 try:
                     self.biblioteca.agendar_evento(nome, descricao, data_evt, local)
                 except Exception:
-                    pass
+                    logger.exception("Falha ao agendar evento durante load: %s (%s)", nome, data_evt)
 
             return True, f"✔ Estado carregado a partir de {path}"
         except Exception as e:
+            logger.exception("Falha ao importar dados do arquivo %s", path)
             return False, f"❗️ Erro ao importar dados: {e}"
 
     def export_acervo(self, path: str) -> (bool, str):
@@ -149,6 +155,7 @@ class BibliotecaFacade:
                 json.dump(data, f, ensure_ascii=False, indent=2)
             return True, f"✔ Acervo exportado para {path}"
         except Exception as e:
+            logger.exception("Falha ao exportar acervo para %s", path)
             return False, f"❗️ Erro ao exportar acervo: {e}"
 
     def import_acervo(self, path: str, merge: bool = True) -> (bool, str):
@@ -161,6 +168,7 @@ class BibliotecaFacade:
             with open(path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
         except Exception as e:
+            logger.exception("Falha ao abrir/ler arquivo %s", path)
             return False, f"❗️ Erro ao abrir arquivo: {e}"
 
         try:
@@ -179,4 +187,5 @@ class BibliotecaFacade:
                 self.biblioteca.cadastrar_item(titulo, autor, editora, genero, total_exemplares, tipo=tipo, **kwargs)
             return True, f"✔ Acervo importado de {path}"
         except Exception as e:
+            logger.exception("Falha ao importar acervo de %s", path)
             return False, f"❗️ Erro ao importar acervo: {e}"
