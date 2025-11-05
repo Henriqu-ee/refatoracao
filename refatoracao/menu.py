@@ -1,11 +1,14 @@
 import sys
 import time
+import sys
+import time
 import os
+import logging
 from classes import Ebook
 from facade import BibliotecaFacade
-from proxies import EbookProxy
 from datetime import datetime
 
+logger = logging.getLogger(__name__)
 #Define a senha de acesso para a área administrativa.
 SENHA_ADMIN = "admin123"
 
@@ -696,6 +699,7 @@ def menu_persistencia(biblioteca, facade: BibliotecaFacade):
                 idx = int(selecionado) - 1
                 backup_path = arquivos[idx]
             except Exception:
+                logger.exception("Seleção de backup inválida: %r", selecionado)
                 print("Seleção inválida.")
                 input("\nPressione ENTER para continuar...")
                 continue
