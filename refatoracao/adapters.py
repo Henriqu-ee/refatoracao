@@ -8,6 +8,9 @@ O adapter tenta normalizar cada linha e chamar `biblioteca.cadastrar_item`.
 from __future__ import annotations
 import csv
 from typing import Tuple
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class CsvCatalogAdapter:
@@ -30,7 +33,7 @@ class CsvCatalogAdapter:
                 try:
                     self.biblioteca.acervo._item.clear()
                 except Exception:
-                    pass
+                    logger.exception("Falha ao limpar acervo antes da importação CSV")
 
             with open(path, newline='', encoding='utf-8') as f:
                 reader = csv.reader(f)
@@ -45,7 +48,7 @@ class CsvCatalogAdapter:
                         # Convert total_exemplares to int when possible
                         try:
                             total_exemplares = int(total_exemplares) if total_exemplares not in (None, '') else 1
-                        except Exception:
+                        except (ValueError, TypeError):
                             total_exemplares = 1
 
                         kwargs = {}
@@ -60,6 +63,8 @@ class CsvCatalogAdapter:
                         self.biblioteca.cadastrar_item(titulo, autor, editora, genero, total_exemplares, tipo=tipo, **kwargs)
                         imported += 1
                     except Exception:
+                        # Loga a linha problemática e continua
+                        logger.exception("Erro ao importar linha CSV: %r", row)
                         errors += 1
                         continue
 
@@ -68,4 +73,5 @@ class CsvCatalogAdapter:
         except FileNotFoundError:
             return False, f"❗️ Arquivo CSV não encontrado: {path}"
         except Exception as e:
+            logger.exception("Falha ao importar CSV %s", path)
             return False, f"❗️ Erro ao importar CSV: {e}"
