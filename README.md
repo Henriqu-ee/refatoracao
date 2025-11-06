@@ -102,27 +102,27 @@ Exemplo:
   facade.load("dados/biblioteca.json", replace=True)
   ```
 
-🛡️ Tratamento de Exceções e Robustez do Sistema
+##🛡️ Tratamento de Exceções e Robustez do Sistema
 A arquitetura do projeto foi desenvolvida com um foco primordial na robustez e na recuperação graciosa de falhas. A implementação de Exception Handling é estratégica e permeia diversas camadas da aplicação, garantindo a estabilidade do sistema mesmo diante de entradas inválidas, falhas de I/O ou erros internos em módulos isolados.
 
-Principais Casos de Uso e Estratégias
-Validação de Dados e Integridade de Entradas (Chain of Responsibility):
+###Principais Casos de Uso e Estratégias
+1. Validação de Dados e Integridade de Entradas (Chain of Responsibility):
 
-Utilizamos blocos try...except (ValueError, TypeError) nos Handlers de validação (validators.py) para garantir que dados críticos (como o número de exemplares) estejam no formato esperado, retornando mensagens de erro claras ao usuário em vez de travar a aplicação.
+ - Utilizamos blocos try...except (ValueError, TypeError) nos Handlers de validação (validators.py) para garantir que dados críticos (como o número de exemplares) estejam no formato esperado, retornando mensagens de erro claras ao usuário em vez de travar a aplicação.
 
-Operações de I/O e Importação de Catálogos (Adapter & Facade):
+2. Operações de I/O e Importação de Catálogos (Adapter & Facade):
 
-O módulo de importação de catálogos (adapters.py, facade.py) é protegido contra falhas de acesso a arquivos (FileNotFoundError) e erros genéricos de leitura/formato (Exception).
+ - O módulo de importação de catálogos (adapters.py, facade.py) é protegido contra falhas de acesso a arquivos (FileNotFoundError) e erros genéricos de leitura/formato (Exception).
 
-Na importação de arquivos grandes (e.g., CSV), a estratégia é tolerante a falhas: se uma linha específica for malformada, o sistema registra o erro (logging.exception) e continua o processamento das linhas restantes, maximizando a taxa de sucesso da importação.
+ - Na importação de arquivos grandes (e.g., CSV), a estratégia é tolerante a falhas: se uma linha específica for malformada, o sistema registra o erro (logging.exception) e continua o processamento das linhas restantes, maximizando a taxa de sucesso da importação.
 
-Estabilidade em Módulos Assíncronos/Delegados (Observer & Proxy):
+3. Estabilidade em Módulos Assíncronos/Delegados (Observer & Proxy):
 
-No padrão Observer (notifications.py), o mecanismo de notificação é isolado: um try...except Exception garante que, se um observador falhar ao tentar processar uma notificação, os outros observadores não sejam interrompidos, mantendo a integridade da comunicação.
+ - No padrão Observer (notifications.py), o mecanismo de notificação é isolado: um try...except Exception garante que, se um observador falhar ao tentar processar uma notificação, os outros observadores não sejam interrompidos, mantendo a integridade da comunicação.
 
-No Proxy de E-book (proxies.py), o tratamento de exceções é usado para garantir que falhas na verificação de regras de acesso (como multas pendentes) não causem travamentos, mas sim resultem em uma negação de acesso segura e logada.
+ - No Proxy de E-book (proxies.py), o tratamento de exceções é usado para garantir que falhas na verificação de regras de acesso (como multas pendentes) não causem travamentos, mas sim resultem em uma negação de acesso segura e logada.
 
-Diagnóstico e Logging
+###Diagnóstico e Logging
 Todas as exceções capturadas que representam falhas de lógica ou problemas de execução são registradas usando logging.exception(). Isso permite que o sistema continue a operar (onde a recuperação graciosa é possível) ao mesmo tempo que gera um traceback completo nos logs para diagnóstico e manutenção.
 
 ## 📌 Sobre
